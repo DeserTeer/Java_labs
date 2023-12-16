@@ -1,3 +1,5 @@
+package bsu.rfe.java.group_5.lab_1.Grintsevich.B_1;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -18,11 +20,11 @@ public class Main {
                 continue;
             } else {
                 String[] parts = arg.split("/");
-                if (parts[0].equals("Cheese")) {
+                if (parts[0].equals("bsu.rfe.java.group_5.lab_1.Grintsevich.B_1.Cheese")) {
                     breakfast[itemsSoFar] = new Cheese();
-                } else if (parts[0].equals("Apple")) {
+                } else if (parts[0].equals("bsu.rfe.java.group_5.lab_1.Grintsevich.B_1.Apple")) {
                     breakfast[itemsSoFar] = new Apple(parts[1]);
-                } else if (parts[0].equals("Coffee")) {
+                } else if (parts[0].equals("bsu.rfe.java.group_5.lab_1.Grintsevich.B_1.Coffee")) {
                     breakfast[itemsSoFar] = new Coffee(parts[1]);
                 }
                 itemsSoFar++;

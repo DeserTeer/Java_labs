@@ -1,3 +1,5 @@
+package bsu.rfe.java.group_5.lab_1.Grintsevich.B_1;
+
 public class Apple extends Food {
     // Новое внутреннее поле данных РАЗМЕР
     private String size;

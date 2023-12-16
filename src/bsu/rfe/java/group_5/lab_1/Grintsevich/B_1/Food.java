@@ -1,3 +1,5 @@
+package bsu.rfe.java.group_5.lab_1.Grintsevich.B_1;
+
 public abstract class Food implements Consumable, Nutritious {
     String name = null;
     public Food(String name) {
@@ -17,6 +19,6 @@ public abstract class Food implements Consumable, Nutritious {
     public void setName(String name) {
         this.name = name;
     }
-// Реализация метода consume() удалена из базового класса Food
-// Это можно сделать, потому что сам Food - абстрактный
+// Реализация метода consume() удалена из базового класса bsu.rfe.java.group_5.lab_1.Grintsevich.B_1.Food
+// Это можно сделать, потому что сам bsu.rfe.java.group_5.lab_1.Grintsevich.B_1.Food - абстрактный
 }
