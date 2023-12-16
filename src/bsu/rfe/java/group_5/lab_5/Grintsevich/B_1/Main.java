@@ -1,6 +1,7 @@
-package bsu.rfe.java.group_5.lab_5.Grintsevich.B_1;
+package bsu.rfe.java.group_5.lab_4.Grintsevich.B_1;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -9,6 +10,7 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
 
+        double y = 24.1234;
 
     }
 

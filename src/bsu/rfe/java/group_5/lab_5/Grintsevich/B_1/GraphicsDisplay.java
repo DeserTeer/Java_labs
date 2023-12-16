@@ -1,28 +1,16 @@
-package bsu.rfe.java.group_5.lab_5.Grintsevich.B_1;
+package bsu.rfe.java.group_5.lab_4.Grintsevich.B_1;
+
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.font.FontRenderContext;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Line2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.*;
+import javax.swing.*;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import javax.swing.JPanel;
-
-
+import java.util.Formatter;
 
 
 @SuppressWarnings("serial")
@@ -32,6 +20,8 @@ public class GraphicsDisplay extends JPanel {
     //// Флаговые переменные, задающие правила отображения графика
     private boolean showAxis = true;
     private boolean showMarkers1 = true;
+
+    private int selectedMarker = -1;
     private boolean showIntegerGraphic = false;
     // Границы диапазона пространства, подлежащего отображению
     private double minX;
@@ -42,52 +32,18 @@ public class GraphicsDisplay extends JPanel {
     private double scale;
     // Различные стили черчения линий
     private BasicStroke graphicsStroke;
+    private BasicStroke selectionRectStroke;
+
     private BasicStroke axisStroke;
     private BasicStroke markerStroke;
+    private double[] originalPoint = new double[2];
     // Различные шрифты отображения надписей
     private Font axisFont;
-
     private ArrayList<double[][]> undoHistory = new ArrayList(5);
-
-    private double[][] viewport = new double[2][2];
-    private int selectedMarker = -1;
-    private boolean scaleMode = false;
-    private boolean changeMode = false;
-    private double[] originalPoint = new double[2];
-    private Rectangle2D.Double selectionRect = new Rectangle2D.Double();
     private double scaleX;
     private double scaleY;
-    protected double[] translatePointToXY(double x, double y) {
-        return new double[]{minX + (double)x / this.scaleX, maxX - (double)y / this.scaleY};
-    }
-
-    protected int findSelectedPoint(int x, int y) {
-        if (this.graphicsData == null) {
-            return -1;
-        } else {
-
-            for(int pos = 0; pos < graphicsData.length; ++pos) {
-                Double[] point = graphicsData[pos];
-                Point2D.Double screenPoint = this.xyToPoint(point[0], point[1]);
-                double distance = (screenPoint.getX() - (double)x) * (screenPoint.getX() - (double)x) + (screenPoint.getY() - (double)y) * (screenPoint.getY() - (double)y);
-               // System.out.println(distance);
-                if (distance < 100.0) {
-                   // System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++");
-
-                    return pos;
-                }
-            }
-
-            return -1;
-        }
-    }
-    public void zoomToRegion(double x1, double y1, double x2, double y2) {
-        this.viewport[0][0] = x1;
-        this.viewport[0][1] = y1;
-        this.viewport[1][0] = x2;
-        this.viewport[1][1] = y2;
-        this.repaint();
-    }
+    private boolean scaleMode;
+    private Rectangle2D.Double selectionRect = new Rectangle2D.Double();
 
     public GraphicsDisplay() {
 // Цвет заднего фона области отображения - белый
@@ -95,6 +51,9 @@ public class GraphicsDisplay extends JPanel {
 // Сконструировать необходимые объекты, используемые в рисовании
 // Перо для рисования графика
         graphicsStroke = new BasicStroke(2.0f, BasicStroke.CAP_BUTT,
+                BasicStroke.JOIN_ROUND, 10.0f, new float[]{20, 10, 10, 10, 10, 10, 10, 10, 20, 10, 10}, 0.0f);
+
+        selectionRectStroke = new BasicStroke(2.0f, BasicStroke.CAP_BUTT,
                 BasicStroke.JOIN_ROUND, 10.0f, new float[]{20, 10, 10, 10, 10, 10, 10, 10, 20, 10, 10}, 0.0f);
 // Перо для рисования осей координат
         axisStroke = new BasicStroke(2.0f, BasicStroke.CAP_BUTT,
@@ -104,9 +63,8 @@ public class GraphicsDisplay extends JPanel {
                 BasicStroke.JOIN_MITER, 10.0f, null, 0.0f);
 // Шрифт для подписей осей координат
         axisFont = new Font("Serif", Font.BOLD, 36);
-       this.addMouseListener(new MouseHandler());
-       this.addMouseMotionListener(new MouseMotionHandler());
-
+        addMouseListener(new MouseHandler());
+        addMouseMotionListener(new MouseMotionHandler());
     }
 
     // Данный метод вызывается из обработчика элемента меню "Открыть файл с графиком"
@@ -114,24 +72,6 @@ public class GraphicsDisplay extends JPanel {
     public void showGraphics(Double[][] graphicsData) {
 // Сохранить массив точек во внутреннем поле класса
         this.graphicsData = graphicsData;
-// Запросить перерисовку компонента, т.е. неявно вызвать paintComponent()
-        repaint();
-    }
-
-
-    // Метод отображения всего компонента, содержащего график
-    public void paintComponent(Graphics g) {
-        /* Шаг 1 - Вызвать метод предка для заливки области цветом заднего фона
-         * Эта функциональность - единственное, что осталось в наследство от
-         * paintComponent класса JPanel
-         */
-        super.paintComponent(g);
-
-// Шаг 2 - Если данные графика не загружены (при показе компонента при запуске программы) - ничего не делать
-        if (graphicsData == null || graphicsData.length == 0) return;
-// Шаг 3 - Определить минимальное и максимальное значения для координат X и Y
-// Это необходимо для определения области пространства, подлежащей отображению
-// Еѐ верхний левый угол это (minX, maxY) - правый нижний это (maxX, minY)
         minX = graphicsData[0][0];
         maxX = graphicsData[graphicsData.length - 1][0];
         minY = graphicsData[0][1];
@@ -145,17 +85,36 @@ public class GraphicsDisplay extends JPanel {
                 maxY = graphicsData[i][1];
             }
         }
+// Запросить перерисовку компонента, т.е. неявно вызвать paintComponent()
+        repaint();
+    }
+
+
+    // Метод отображения всего компонента, содержащего график
+    public void paintComponent(Graphics g) {
+        /* Шаг 1 - Вызвать метод предка для заливки области цветом заднего фона
+         * Эта функциональность - единственное, что осталось в наследство от
+         * paintComponent класса JPanel
+         */
+        super.paintComponent(g);
+// Шаг 2 - Если данные графика не загружены (при показе компонента при запуске программы) - ничего не делать
+        if (graphicsData == null || graphicsData.length == 0) return;
+// Шаг 3 - Определить минимальное и максимальное значения для координат X и Y
+// Это необходимо для определения области пространства, подлежащей отображению
+// Еѐ верхний левый угол это (minX, maxY) - правый нижний это (maxX, minY)
+
 /* Шаг 4 - Определить (исходя из размеров окна) масштабы по осям X
 и Y - сколько пикселов
 * приходится на единицу длины по X и по Y
 */
-         scaleX = getSize().getWidth() / (maxX - minX);
-         scaleY = getSize().getHeight() / (maxY - minY);
+        scaleX = getSize().getWidth() / (maxX - minX);
+        scaleY = getSize().getHeight() / (maxY - minY);
+        scale = Math.min(scaleX, scaleY);
 // Шаг 5 - Чтобы изображение было неискажѐнным - масштаб должен быть одинаков
 // Выбираем за основу минимальный
-        scale = Math.min(scaleX, scaleY);
 // Шаг 6 - корректировка границ отображаемой области согласно выбранному масштабу
- /*Если за основу был взят масштаб по оси X, значит по оси Y
+        if (scale == scaleX) {
+/* Если за основу был взят масштаб по оси X, значит по оси Y
 делений меньше,
 * т.е. подлежащий визуализации диапазон по Y будет меньше
 высоты окна.
@@ -164,8 +123,8 @@ public class GraphicsDisplay extends JPanel {
 масштабе - getSize().getHeight()/scale
 * 2) Вычтем из этого сколько делений требовалось изначально
 * 3) Набросим по половине недостающего расстояния на maxY и
-minY*/
-        if (scale == scaleX) {
+minY
+*/
             double yIncrement = (getSize().getHeight() / scale - (maxY -
                     minY)) / 2;
             maxY += yIncrement;
@@ -178,7 +137,6 @@ minY*/
             maxX += xIncrement;
             minX -= xIncrement;
         }
-
 // Шаг 7 - Сохранить текущие настройки холста
         Graphics2D canvas = (Graphics2D) g;
         Stroke oldStroke = canvas.getStroke();
@@ -204,6 +162,8 @@ minY*/
         canvas.setPaint(oldPaint);
         canvas.setColor(oldColor);
         canvas.setStroke(oldStroke);
+        canvas.setStroke(selectionRectStroke);
+        canvas.draw(selectionRect);
     }
 
     // Отрисовка графика по прочитанным координатам
@@ -285,7 +245,15 @@ minY*/
     // Отображение маркеров точек, по которым рисовался график
     protected void paintMarkers1(Graphics2D canvas) {
         canvas.setStroke(markerStroke);
-        for (Double[] point : graphicsData) {
+        for (int j = 0; j < graphicsData.length; j++) {
+            Double[] point = graphicsData[j];
+            if (selectedMarker == j) {
+                var pointInWindow = xyToPoint(point[0], point[1]);
+                DecimalFormat format = new DecimalFormat("#.##");
+                canvas.setColor(Color.BLACK);
+                canvas.drawString("X:" + format.format(point[0]) + " Y:" + format.format(point[1]),
+                        (int)pointInWindow.getX(), (int)pointInWindow.getY());
+            }
             double x = point[0];
             double y = point[1];
             Point2D.Double center = xyToPoint(x, y);
@@ -295,10 +263,12 @@ minY*/
             while (!Y.substring(i, i + 1).equals(".")) {
                 i++;
             }
-            Y = Y.substring(0, i) + Y.substring(i+1);
+            Y = Y.substring(0, i) + Y.substring(i + 1);
             if (Y.matches(sample)) {
+                //System.out.println("green");
                 canvas.setColor(Color.green);
             } else {
+                //System.out.println("red");
                 canvas.setColor(Color.RED);
             }
 
@@ -444,10 +414,44 @@ minY*/
         return dest;
     }
 
-    public MouseMotionListener getMouseMotionListener() {
-        return new MouseMotionHandler();
+    public void zoomToRegion(double x1, double y1, double x2, double y2) {
+        this.minX = x1;
+        this.maxY = y1;
+        this.maxX = x2;
+        this.minY = y2;
+        this.repaint();
     }
 
+    protected int findSelectedPoint(int x, int y) {
+        if (this.graphicsData == null) {
+            return -1;
+        } else {
+
+            for (int pos = 0; pos < graphicsData.length; ++pos) {
+                Double[] point = graphicsData[pos];
+                Point2D.Double screenPoint = this.xyToPoint(point[0], point[1]);
+                double distance = (screenPoint.getX() - (double) x) * (screenPoint.getX() - (double) x) + (screenPoint.getY() - (double) y) * (screenPoint.getY() - (double) y);
+                // System.out.println(distance);
+                if (distance < 100.0) {
+                    // System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++");
+
+                    return pos;
+                }
+            }
+
+            return -1;
+        }
+    }
+
+    protected double[] pointToXY(double x, double y) {
+        return new double[]{minX + (double) x / this.scale, maxY - (double) y / this.scale};
+    }
+
+    private void returnToLastView() {
+        var view = undoHistory.getLast();
+        undoHistory.removeLast();
+        zoomToRegion(view[0][0], view[0][1], view[1][0], view[1][1]);
+    }
 
     public class MouseHandler extends MouseAdapter {
         public MouseHandler() {
@@ -455,109 +459,79 @@ minY*/
 
         public void mouseClicked(MouseEvent ev) {
             if (ev.getButton() == 3) {
-                if (!GraphicsDisplay.this.undoHistory.isEmpty()) {
-                    GraphicsDisplay.this.viewport = (double[][])GraphicsDisplay.this.undoHistory.get(GraphicsDisplay.this.undoHistory.size() - 1);
-                    GraphicsDisplay.this.undoHistory.remove(GraphicsDisplay.this.undoHistory.size() - 1);
+                if (!undoHistory.isEmpty()) {
+                    returnToLastView();
                 } else {
-                    GraphicsDisplay.this.zoomToRegion(GraphicsDisplay.this.minX, GraphicsDisplay.this.maxY, GraphicsDisplay.this.maxX, GraphicsDisplay.this.minY);
+                    zoomToRegion(minX, maxY, maxX, minY);
                 }
 
-                GraphicsDisplay.this.repaint();
+                repaint();
             }
 
         }
 
         public void mousePressed(MouseEvent ev) {
-            //System.out.println(ev.getButton());
             if (ev.getButton() == 1) {
-                GraphicsDisplay.this.selectedMarker = GraphicsDisplay.this.findSelectedPoint(ev.getX(), ev.getY());
-                System.out.println(selectedMarker);
-                GraphicsDisplay.this.originalPoint = GraphicsDisplay.this.translatePointToXY(ev.getX(), ev.getY());
-                System.out.println(Arrays.toString(originalPoint));
-
-                if (GraphicsDisplay.this.selectedMarker >= 0) {
-                    GraphicsDisplay.this.changeMode = true;
-                    GraphicsDisplay.this.setCursor(Cursor.getPredefinedCursor(8));
-
-
-                } else {
-                    System.out.println("ev.getButton()");
-
-                    GraphicsDisplay.this.scaleMode = true;
-                    GraphicsDisplay.this.setCursor(Cursor.getPredefinedCursor(5));
-                    GraphicsDisplay.this.selectionRect.setFrame((double)ev.getX(), (double)ev.getY(), 1.0, 1.0);
-                }
+                selectedMarker = findSelectedPoint(ev.getX(), ev.getY());
+                originalPoint = pointToXY(ev.getX(), ev.getY());
+                //System.out.println(originalPoint);
+                scaleMode = true;
+                setCursor(Cursor.getPredefinedCursor(5));
+                selectionRect.setFrame((double) ev.getX(), (double) ev.getY(), 1.0, 1.0);
+                repaint();
 
             }
         }
 
         public void mouseReleased(MouseEvent ev) {
             if (ev.getButton() == 1) {
-                GraphicsDisplay.this.setCursor(Cursor.getPredefinedCursor(0));
-                if (GraphicsDisplay.this.changeMode) {
-                    GraphicsDisplay.this.changeMode = false;
-                } else {
-                    GraphicsDisplay.this.scaleMode = false;
-                    double[] finalPoint = GraphicsDisplay.this.translatePointToXY(ev.getX(), ev.getY());
-                    GraphicsDisplay.this.undoHistory.add(GraphicsDisplay.this.viewport);
-                    GraphicsDisplay.this.viewport = new double[2][2];
-                    GraphicsDisplay.this.zoomToRegion(GraphicsDisplay.this.originalPoint[0], GraphicsDisplay.this.originalPoint[1], finalPoint[0], finalPoint[1]);
-                    GraphicsDisplay.this.repaint();
-                }
+                setCursor(Cursor.getPredefinedCursor(0));
+                selectionRect.setFrame(0, 0, 0, 0);
+                scaleMode = false;
+                double[] finalPoint = pointToXY(ev.getX(), ev.getY());
+                undoHistory.add(new double[][]{{minX, maxY}, {maxX, minY}});
+                zoomToRegion(originalPoint[0], originalPoint[1], finalPoint[0], finalPoint[1]);
+                repaint();
+
 
             }
         }
+
+
     }
 
-    public  MouseListener getMouseListener() {
-        return new MouseHandler();
-    }
 
     public class MouseMotionHandler implements MouseMotionListener {
         public MouseMotionHandler() {
         }
 
         public void mouseMoved(MouseEvent ev) {
-            GraphicsDisplay.this.selectedMarker = GraphicsDisplay.this.findSelectedPoint(ev.getX(), ev.getY());
-            if (GraphicsDisplay.this.selectedMarker >= 0) {
-                GraphicsDisplay.this.setCursor(Cursor.getPredefinedCursor(8));
+            selectedMarker = findSelectedPoint(ev.getX(), ev.getY());
+            if (selectedMarker >= 0) {
+                setCursor(Cursor.getPredefinedCursor(8));
             } else {
-                GraphicsDisplay.this.setCursor(Cursor.getPredefinedCursor(0));
+                setCursor(Cursor.getPredefinedCursor(0));
             }
 
-            GraphicsDisplay.this.repaint();
+            repaint();
         }
 
         public void mouseDragged(MouseEvent ev) {
-            if (GraphicsDisplay.this.changeMode) {
-                double[] currentPoint = GraphicsDisplay.this.translatePointToXY(ev.getX(), ev.getY());
-                double newY = GraphicsDisplay.this.graphicsData[GraphicsDisplay.this.selectedMarker][1] + (currentPoint[1] - GraphicsDisplay.this.graphicsData[GraphicsDisplay.this.selectedMarker][1]);
-                if (newY > maxX) {
-                    newY = maxX;
-                }
 
-                if (newY < maxY) {
-                    newY = maxY;
-                }
-
-                GraphicsDisplay.this.graphicsData[GraphicsDisplay.this.selectedMarker][1] = newY;
-                GraphicsDisplay.this.repaint();
-            } else {
-                double width = (double)ev.getX() - GraphicsDisplay.this.selectionRect.getX();
-                if (width < 5.0) {
-                    width = 5.0;
-                }
-
-                double height = (double)ev.getY() - GraphicsDisplay.this.selectionRect.getY();
-                if (height < 5.0) {
-                    height = 5.0;
-                }
-
-                GraphicsDisplay.this.selectionRect.setFrame(GraphicsDisplay.this.selectionRect.getX(), GraphicsDisplay.this.selectionRect.getY(), width, height);
-                GraphicsDisplay.this.repaint();
+            double width = (double) ev.getX() - selectionRect.getX();
+            if (width < 5.0) {
+                width = 5.0;
             }
+
+            double height = (double) ev.getY() - selectionRect.getY();
+            if (height < 5.0) {
+                height = 5.0;
+            }
+
+            selectionRect.setFrame(selectionRect.getX(), selectionRect.getY(), width, height);
+            repaint();
+
 
         }
     }
-
 }

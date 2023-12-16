@@ -1,4 +1,4 @@
-package bsu.rfe.java.group_5.lab_5.Grintsevich.B_1;
+package bsu.rfe.java.group_5.lab_4.Grintsevich.B_1;
 
 import java.awt.BorderLayout;
 import java.awt.Toolkit;
@@ -64,7 +64,6 @@ public class MainFrame extends JFrame {
                         JFileChooser.APPROVE_OPTION)
                     openGraphics(fileChooser.getSelectedFile());
             }
-
         };
 // Добавить соответствующий элемент меню
         fileMenu.add(openGraphicsAction);
@@ -117,8 +116,7 @@ public class MainFrame extends JFrame {
 
 
 
-        this.addMouseListener(display.getMouseListener());
-        this.addMouseMotionListener(display.getMouseMotionListener());
+
     }
 
 
