@@ -1,4 +1,4 @@
-package bsu.rfe.java.group_5.lab_4.Grintsevich.B_1;
+package bsu.rfe.java.group_5.lab_5.Grintsevich.B_1;
 
 import java.awt.BorderLayout;
 import java.awt.Toolkit;
