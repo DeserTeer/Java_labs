@@ -1,4 +1,4 @@
-package bsu.rfe.java.group_5.lab_4.Grintsevich.B_1;
+package bsu.rfe.java.group_5.lab_5.Grintsevich.B_1;
 
 
 import java.awt.*;
@@ -44,6 +44,7 @@ public class GraphicsDisplay extends JPanel {
     private double scaleY;
     private boolean scaleMode;
     private Rectangle2D.Double selectionRect = new Rectangle2D.Double();
+
 
     public GraphicsDisplay() {
 // Цвет заднего фона области отображения - белый
@@ -252,7 +253,7 @@ minY
                 DecimalFormat format = new DecimalFormat("#.##");
                 canvas.setColor(Color.BLACK);
                 canvas.drawString("X:" + format.format(point[0]) + " Y:" + format.format(point[1]),
-                        (int)pointInWindow.getX(), (int)pointInWindow.getY());
+                        (int) pointInWindow.getX(), (int) pointInWindow.getY());
             }
             double x = point[0];
             double y = point[1];
@@ -517,21 +518,20 @@ minY
         }
 
         public void mouseDragged(MouseEvent ev) {
+            if (scaleMode) {
+                double width = (double) ev.getX() - selectionRect.getX();
+                if (width < 5.0) {
+                    width = 5.0;
+                }
 
-            double width = (double) ev.getX() - selectionRect.getX();
-            if (width < 5.0) {
-                width = 5.0;
+                double height = (double) ev.getY() - selectionRect.getY();
+                if (height < 5.0) {
+                    height = 5.0;
+                }
+                selectionRect.setFrame(selectionRect.getX(), selectionRect.getY(), width, height);
+                repaint();
             }
-
-            double height = (double) ev.getY() - selectionRect.getY();
-            if (height < 5.0) {
-                height = 5.0;
-            }
-
-            selectionRect.setFrame(selectionRect.getX(), selectionRect.getY(), width, height);
-            repaint();
-
-
         }
     }
+
 }
